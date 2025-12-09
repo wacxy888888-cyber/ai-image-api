@@ -16,7 +16,7 @@ app = FastAPI(
 # ==================== 添加 CORS 支持（关键！允许前端网页访问）====================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://wacxy888888-cyber.github.io"],  # 允许你的 GitHub Pages 页面访问
+    allow_origins=["https://image8888.github.io"],  # 允许你的 GitHub Pages 页面访问
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -101,3 +101,4 @@ def home():
         "docs": "/docs",
         "status": "ok"
     }
+
