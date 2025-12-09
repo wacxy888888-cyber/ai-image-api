@@ -4,115 +4,44 @@
   <meta charset="UTF-8" />
   <title>AI-Image API 在线生成</title>
   <style>
-    body {
-      font-family: "Microsoft YaHei", sans-serif;
-      padding: 20px;
-      background: #f5f5f5;
-      margin: 0;
-    }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-    h1 {
-      text-align: center;
-      color: #333;
-      margin-top: 0;
-    }
-    label {
-      display: block;
-      margin: 15px 0 5px;
-      font-weight: bold;
-      color: #555;
-    }
-    input, textarea, button {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      font-size: 14px;
-    }
-    textarea {
-      height: 80px;
-      resize: vertical;
-    }
-    button {
-      background: #007BFF;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background 0.3s;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    .btn-check {
-      background: #28a745 !important;
-    }
-    .result {
-      margin-top: 20px;
-      text-align: center;
-    }
-    .result img {
-      max-width: 100%;
-      border: 1px solid #eee;
-      border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .loading {
-      color: #007BFF;
-      font-style: italic;
-      text-align: center;
-      margin: 10px 0;
-    }
-    .credits-result {
-      margin: 10px 0;
-      padding: 10px;
-      background: #f8f9fa;
-      border-radius: 5px;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-    .notice {
-      background: #fff3cd;
-      padding: 10px;
-      border-radius: 5px;
-      color: #856404;
-      font-size: 14px;
-      margin: 20px 0;
-      text-align: center;
-    }
-    .footer {
-      text-align: center;
-      margin-top: 40px;
-      color: #999;
-      font-size: 12px;
-    }
+    body { font-family: "Microsoft YaHei", sans-serif; padding: 20px; background: #f5f5f5; margin: 0; }
+    .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { text-align: center; color: #333; margin-top: 0; }
+    label { display: block; margin: 15px 0 5px; font-weight: bold; color: #555; }
+    input, textarea, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+    textarea { height: 80px; resize: vertical; }
+    button { background: #007BFF; color: white; font-size: 16px; cursor: pointer; font-weight: bold; transition: background 0.3s; }
+    button:hover { background: #0056b3; }
+    .btn-upload { background: #fd7e14 !important; }
+    .btn-check { background: #28a745 !important; }
+    .result { margin-top: 20px; text-align: center; }
+    .result img { max-width: 100%; border: 1px solid #eee; border-radius: 5px; }
+    .loading, .upload-status, .credits-result { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 14px; }
+    .notice { background: #fff3cd; padding: 10px; border-radius: 5px; color: #856404; text-align: center; margin: 20px 0; }
   </style>
 </head>
 <body>
-
 <div class="container">
   <h1>🎨 AI-Image API 图文生成平台</h1>
-  <p style="text-align:center;color:#666;">输入提示词 + 图片链接，一键生成高质量图像</p>
+  <p style="text-align:center;color:#666;">支持本地上传 + 实时生成</p>
 
   <!-- 密钥输入 -->
   <label>🔑 请输入你的充值码（sk- 开头）：</label>
   <input type="text" id="apiKey" placeholder="例如：sk-LbdPM8vmAzybGJkUJI5qR9Z82tyTICuLmtKF9evgi3cQa8DU" />
 
-  <!-- 查询实际额度按钮 -->
-  <button onclick="checkBalance()" class="btn-check">📊 查询实际可用额度</button>
-  <div id="credits-result" class="credits-result"></div>
+  <!-- 查询额度 -->
+  <button onclick="checkBalance()" class="btn-check">📊 查询可用额度</button>
+  <div id="credits-result"></div>
 
-  <!-- 图片链接 -->
-  <label>图片链接（必须可访问）：</label>
-  <input type="url" id="imageUrl" placeholder="https://cdn.pixabay.com/photo/xxx.jpg" />
+  <!-- 上传图片 -->
+  <label>📤 选择本地图（自动上传）：</label>
+  <input type="file" id="uploadInput" accept="image/*" />
+  <button onclick="uploadToOSS()" class="btn-upload">☁️ 上传到云端</button>
+  <div id="upload-status"></div>
+
+  <!-- 图片链接（自动生成） -->
+  <label>🔗 图片链接（系统填充）：</label>
+  <input type="text" id="imageUrl" readonly placeholder="上传完成后自动显示" />
 
   <!-- 提示词 -->
   <label>中文提示词：</label>
@@ -120,77 +49,82 @@
 
   <!-- 生成按钮 -->
   <button onclick="generate()">👉 开始生成</button>
-  <div id="loading" class="loading" style="display:none;">⏳ 正在生成，请稍候...</div>
+  <div id="loading" style="display:none;">⏳ 正在生成...</div>
   <div id="result" class="result"></div>
 
-  <!-- 使用说明 -->
-  <div class="notice">
-    💡 提示：直接输入你的即梦AI充值码即可使用，所有额度均从官方接口实时获取。
-  </div>
+  <div class="notice">💡 所有操作均在网页端完成，无需手动复制链接</div>
 </div>
 
 <script>
-  // 查询实时额度（从即梦AI官方获取）
   async function checkBalance() {
     const apiKey = document.getElementById("apiKey").value.trim();
     const resultDiv = document.getElementById("credits-result");
-
     if (!apiKey || !apiKey.startsWith("sk-")) {
-      resultDiv.innerHTML = '<p style="color:red;">❌ 请输入有效的充值码（以 sk- 开头）</p>';
+      resultDiv.innerHTML = '<p style="color:red;">❌ 请输入有效的充值码</p>';
       return;
     }
-
-    resultDiv.innerHTML = '⏳ 正在查询云端额度...';
-
+    resultDiv.innerHTML = '⏳ 查询中...';
     try {
-      const response = await fetch("https://ai-image-api-u2s6.onrender.com/v1/user/balance", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "X-API-Key": apiKey
-        }
+      const res = await fetch("https://ai-image-api-u2s6.onrender.com/v1/user/balance", {
+        headers: { "X-API-Key": apiKey }
       });
-
-      const data = await response.json();
-
-      if (data.error) {
-        resultDiv.innerHTML = `<p style="color:red;">❌ 查询失败：${data.detail || data.error}</p>`;
-      } else {
-        resultDiv.innerHTML = `
-          <div style="color:green; line-height:1.5;">
-            <p>💳 总额度：<strong>${data.total}</strong> 张</p>
-            <p>📤 已使用：<strong>${data.used}</strong> 张</p>
-            <p>📥 剩余：<strong>${data.remaining}</strong> 张</p>
-          </div>
-        `;
-      }
+      const data = await res.json();
+      if (data.error) throw new Error(data.detail);
+      resultDiv.innerHTML = `<div style="color:green;">
+        <p>💳 总额度：<strong>${data.total}</strong> 张</p>
+        <p>📤 已用：<strong>${data.used}</strong> 张</p>
+        <p>📥 剩余：<strong>${data.remaining}</strong> 张</p>
+      </div>`;
     } catch (err) {
-      resultDiv.innerHTML = `<p style="color:red;">⚠️ 网络错误：${err.message}</p>`;
+      resultDiv.innerHTML = `<p style="color:red;">❌ ${err.message}</p>`;
     }
   }
 
-  // 生成图片
+  async function uploadToOSS() {
+    const fileInput = document.getElementById("uploadInput");
+    const statusDiv = document.getElementById("upload-status");
+    const urlInput = document.getElementById("imageUrl");
+    if (!fileInput.files[0]) {
+      statusDiv.innerHTML = '<p style="color:red;">❌ 请先选择一张图片</p>';
+      return;
+    }
+    statusDiv.innerHTML = '⏳ 上传中...';
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+    try {
+      const res = await fetch("https://ai-image-api-u2s6.onrender.com/v1/upload/oss", {
+        method: "POST", body: formData
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.detail);
+      urlInput.value = data.url;
+      statusDiv.innerHTML = `<p style="color:green;">✅ 上传成功！文件名：${data.filename}</p>`;
+    } catch (err) {
+      statusDiv.innerHTML = `<p style="color:red;">❌ 上传失败：${err.message}</p>`;
+    }
+  }
+
   async function generate() {
     const apiKey = document.getElementById("apiKey").value.trim();
     const imageUrl = document.getElementById("imageUrl").value.trim();
     const prompt = document.getElementById("prompt").value.trim();
+    const loading = document.getElementById("loading");
     const resultDiv = document.getElementById("result");
-    const loadingDiv = document.getElementById("loading");
 
     if (!apiKey || !apiKey.startsWith("sk-")) {
-      alert("请先输入有效的充值码（以 sk- 开头）！");
+      alert("请先输入有效的充值码！");
       return;
     }
     if (!imageUrl || !prompt) {
-      alert("请填写图片链接和提示词！");
+      alert("请先上传图片并填写提示词！");
       return;
     }
 
     resultDiv.innerHTML = "";
-    loadingDiv.style.display = "block";
+    loading.style.display = "block";
 
     try {
-      const response = await fetch("https://ai-image-api-u2s6.onrender.com/v1/images/generations", {
+      const res = await fetch("https://ai-image-api-u2s6.onrender.com/v1/images/generations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -198,31 +132,23 @@
         },
         body: JSON.stringify({ prompt, image_url: imageUrl, size: "2K" })
       });
-
-      const data = await response.json();
-      loadingDiv.style.display = "none";
-
-      if (response.ok && data.data && data.data[0]?.url) {
+      const data = await res.json();
+      loading.style.display = "none";
+      if (res.ok && data.data?.[0]?.url) {
         resultDiv.innerHTML = `
           <h3>✅ 生成成功！</h3>
-          <img src="${data.data[0].url}" alt="生成结果" />
-          <p><a href="${data.data[0].url}" target="_blank">🔗 点击查看原图</a></p>
+          <img src="${data.data[0].url}" alt="结果" />
+          <p><a href="${data.data[0].url}" target="_blank">🔗 查看原图</a></p>
         `;
-        // 成功后重新查询额度
-        checkBalance();
+        checkBalance(); // 刷新额度
       } else {
         resultDiv.innerHTML = `<p style="color:red;">❌ 生成失败：${data.detail || '未知错误'}</p>`;
       }
     } catch (err) {
-      loadingDiv.style.display = "none";
+      loading.style.display = "none";
       resultDiv.innerHTML = `<p style="color:red;">⚠️ 网络错误：${err.message}</p>`;
     }
   }
 </script>
-
-<div class="footer">
-  Powered by AI-Image API © 2025
-</div>
-
 </body>
 </html>
