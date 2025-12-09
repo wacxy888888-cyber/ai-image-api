@@ -77,7 +77,7 @@
       background: #f8f9fa;
       border-radius: 5px;
       font-size: 14px;
-      text-align: center;
+      line-height: 1.6;
     }
     .notice {
       background: #fff3cd;
@@ -103,11 +103,11 @@
   <p style="text-align:center;color:#666;">输入提示词 + 图片链接，一键生成高质量图像</p>
 
   <!-- 密钥输入 -->
-  <label>🔑 请输入你的密钥：</label>
-  <input type="text" id="apiKey" placeholder="例如：user-pro-abc123" />
+  <label>🔑 请输入你的充值码（sk- 开头）：</label>
+  <input type="text" id="apiKey" placeholder="例如：sk-LbdPM8vmAzybGJkUJI5qR9Z82tyTICuLmtKF9evgi3cQa8DU" />
 
-  <!-- 查询剩余次数按钮 -->
-  <button onclick="checkCredits()" class="btn-check">🔍 查询剩余次数</button>
+  <!-- 查询实际额度按钮 -->
+  <button onclick="checkBalance()" class="btn-check">📊 查询实际可用额度</button>
   <div id="credits-result" class="credits-result"></div>
 
   <!-- 图片链接 -->
@@ -125,25 +125,25 @@
 
   <!-- 使用说明 -->
   <div class="notice">
-    💡 提示：未购买用户请私聊获取密钥。付费用户支持无限调用、优先生成。
+    💡 提示：直接输入你的即梦AI充值码即可使用，所有额度均从官方接口实时获取。
   </div>
 </div>
 
 <script>
-  // 查询剩余次数
-  async function checkCredits() {
+  // 查询实时额度（从即梦AI官方获取）
+  async function checkBalance() {
     const apiKey = document.getElementById("apiKey").value.trim();
     const resultDiv = document.getElementById("credits-result");
 
-    if (!apiKey) {
-      resultDiv.innerHTML = '<p style="color:red;">❌ 请先输入你的密钥！</p>';
+    if (!apiKey || !apiKey.startsWith("sk-")) {
+      resultDiv.innerHTML = '<p style="color:red;">❌ 请输入有效的充值码（以 sk- 开头）</p>';
       return;
     }
 
-    resultDiv.innerHTML = '⏳ 正在查询...';
+    resultDiv.innerHTML = '⏳ 正在查询云端额度...';
 
     try {
-      const response = await fetch("https://ai-image-api-u2s6.onrender.com/v1/user/credits", {
+      const response = await fetch("https://ai-image-api-u2s6.onrender.com/v1/user/balance", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -153,10 +153,16 @@
 
       const data = await response.json();
 
-      if (response.ok) {
-        resultDiv.innerHTML = `<p style="color:green;">✅ 你还剩 <strong>${data.remaining}</strong> 次生成额度</p>`;
+      if (data.error) {
+        resultDiv.innerHTML = `<p style="color:red;">❌ 查询失败：${data.detail || data.error}</p>`;
       } else {
-        resultDiv.innerHTML = `<p style="color:red;">❌ ${data.detail || '密钥无效'}</p>`;
+        resultDiv.innerHTML = `
+          <div style="color:green; line-height:1.5;">
+            <p>💳 总额度：<strong>${data.total}</strong> 张</p>
+            <p>📤 已使用：<strong>${data.used}</strong> 张</p>
+            <p>📥 剩余：<strong>${data.remaining}</strong> 张</p>
+          </div>
+        `;
       }
     } catch (err) {
       resultDiv.innerHTML = `<p style="color:red;">⚠️ 网络错误：${err.message}</p>`;
@@ -171,8 +177,8 @@
     const resultDiv = document.getElementById("result");
     const loadingDiv = document.getElementById("loading");
 
-    if (!apiKey) {
-      alert("请先输入你的密钥！");
+    if (!apiKey || !apiKey.startsWith("sk-")) {
+      alert("请先输入有效的充值码（以 sk- 开头）！");
       return;
     }
     if (!imageUrl || !prompt) {
@@ -202,8 +208,8 @@
           <img src="${data.data[0].url}" alt="生成结果" />
           <p><a href="${data.data[0].url}" target="_blank">🔗 点击查看原图</a></p>
         `;
-        // 成功后自动刷新剩余次数
-        checkCredits();
+        // 成功后重新查询额度
+        checkBalance();
       } else {
         resultDiv.innerHTML = `<p style="color:red;">❌ 生成失败：${data.detail || '未知错误'}</p>`;
       }
