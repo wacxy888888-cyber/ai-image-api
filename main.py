@@ -1,4 +1,4 @@
-# main.py - 即梦AI生图代理API（支持Swagger鉴权）
+# main.py - 即梦AI生图代理API（安全版，支持环境变量）
 from fastapi import FastAPI, Request, HTTPException, Depends
 from pydantic import BaseModel
 from fastapi.security import APIKeyHeader
@@ -16,10 +16,13 @@ app = FastAPI(
 UPSTREAM_API_URL = "https://api.apicore.ai/v1/images/generations"
 UPSTREAM_MODEL = "doubao-seedream-4-0-250828"
 
-# 【重要】换成你自己的充值码
-MASTER_API_KEY = "sk-LbdPM8vmAzybGJkUJI5qR9Z82tyTICuLmtKF9evgi3cQa8DU"  # ← 换成你的真实 sk-xxxx
+# 从环境变量读取主密钥（不再写死在代码中！）
+MASTER_API_KEY = os.getenv("MASTER_API_KEY")
 
-# 用户数据库（key → 剩余次数）
+if not MASTER_API_KEY:
+    raise RuntimeError("❌ 环境变量 MASTER_API_KEY 未设置，请在 Render 中配置！")
+
+# 用户数据库（客户 Key → 剩余次数）
 USER_DB = {
     "user-test123": {"credits": 100},
     "user-pro456": {"credits": 1000},
@@ -87,4 +90,3 @@ def home():
         "docs": "/docs",
         "status": "ok"
     }
-
